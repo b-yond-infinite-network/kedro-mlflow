@@ -138,30 +138,30 @@ class PipelineML(Pipeline):
 
     def _check_consistency(self) -> None:
 
-        inference_parameters = {
-            input for input in self.inference.inputs() if input.startswith("params:")
-        }
+        # inference_parameters = {
+        #     input for input in self.inference.inputs() if input.startswith("params:")
+        # }
 
-        free_inputs_set = (
-            self.inference.inputs()
-            - {self.input_name}
-            - self.all_outputs()
-            - self.inputs()
-            - inference_parameters  # it is allowed to pass parameters: they will be automatically persisted by the hook
-        )
+        # free_inputs_set = (
+        #     self.inference.inputs()
+        #     - {self.input_name}
+        #     - self.all_outputs()
+        #     - self.inputs()
+        #     - inference_parameters  # it is allowed to pass parameters: they will be automatically persisted by the hook
+        # )
 
-        if len(free_inputs_set) > 0:
-            input_set_txt = "\n     - ".join(free_inputs_set)
-            raise KedroMlflowPipelineMLError(
-                (
-                    "The following inputs are free for the inference pipeline:\n"
-                    f"    - {input_set_txt}."
-                    " \nNo free input is allowed."
-                    " Please make sure that 'inference.inputs()' are all"
-                    " in 'training.all_outputs() + training.inputs()'"
-                    "except 'input_name' and parameters which starts with 'params:'."
-                )
-            )
+        # if len(free_inputs_set) > 0:
+        #     input_set_txt = "\n     - ".join(free_inputs_set)
+        #     raise KedroMlflowPipelineMLError(
+        #         (
+        #             "The following inputs are free for the inference pipeline:\n"
+        #             f"    - {input_set_txt}."
+        #             " \nNo free input is allowed."
+        #             " Please make sure that 'inference.inputs()' are all"
+        #             " in 'training.all_outputs() + training.inputs()'"
+        #             "except 'input_name' and parameters which starts with 'params:'."
+        #         )
+        #     )
 
         return None
 
