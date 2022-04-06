@@ -1,5 +1,6 @@
 import logging
 import os
+from filelock import FileLock
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict
@@ -116,33 +117,35 @@ class MlflowPipelineHook:
     
             mlflow_run_id = mlflow_config.tracking.run.id
             kubeflow_run_id = os.environ.get("KUBEFLOW_RUN_ID")
-            # check if we are within a kubeflow pipeline execution
             if kubeflow_run_id:
                 run_name = kubeflow_run_id 
-                # in case the run_id is not coming from config
                 # check if the mlflow run has already started
                 mlflow_run_has_started = os.path.isfile(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}")
                 if mlflow_run_has_started:
                     # read the mlflow run id from the file
                     with open(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}", "r") as f:
                         mlflow_run_id = f.read()
-                    
-        
-            active_run = mlflow.start_run(
-                run_id=mlflow_run_id,
-                experiment_id=mlflow_config.tracking.experiment._experiment.experiment_id,
-                run_name=run_name,
-                nested=mlflow_config.tracking.run.nested,
-            )
+                else:
+                    os.mkdir("/home/kedro/data/mlflow_run")  
+                                       
+                with FileLock("/home/kedro/data/mlflow_run/lock"):
+                    active_run = mlflow.start_run(
+                        run_id=mlflow_run_id,
+                        experiment_id=mlflow_config.tracking.experiment._experiment.experiment_id,
+                        run_name=run_name,
+                        nested=mlflow_config.tracking.run.nested,
+                    )
 
-            if kubeflow_run_id and not mlflow_run_has_started:
-                # create directory mlflow_run if it doesn't exist
-                if not os.path.isdir("/home/kedro/data/mlflow_run"):
-                    os.mkdir("/home/kedro/data/mlflow_run")
-                # write the mlflow run id to the file
-                with open(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}", "w") as f:
-                    f.write(active_run.info.run_id)
-
+                    if not mlflow_run_has_started:                 
+                        with open(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}", "w") as f:
+                            f.write(active_run.info.run_id)
+            else:
+                active_run = mlflow.start_run(
+                    run_id=mlflow_run_id,
+                    experiment_id=mlflow_config.tracking.experiment._experiment.experiment_id,
+                    run_name=run_name,
+                    nested=mlflow_config.tracking.run.nested,
+                )                            
             # Set tags only for run parameters that have values.
             mlflow.set_tags({k: v for k, v in run_params.items() if v})
             # add manually git sha for consistency with the journal
