@@ -126,7 +126,10 @@ class MlflowPipelineHook:
                     with open(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}", "r") as f:
                         mlflow_run_id = f.read()
                 else:
-                    os.mkdir("/home/kedro/data/mlflow_run")  
+                    try:
+                        os.mkdir("/home/kedro/data/mlflow_run")  
+                    except FileExistsError:
+                        pass
     
                 with FileLock("/home/kedro/data/mlflow_run/lock"):
                     active_run = mlflow.start_run(
