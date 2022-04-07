@@ -221,12 +221,20 @@ class MlflowPipelineHook:
                             input_data = catalog.load(pipeline.input_name)
                             model_signature = infer_signature(model_input=input_data)
 
-                    mlflow.pyfunc.log_model(
-                        python_model=kedro_pipeline_model,
-                        artifacts=artifacts,
-                        signature=model_signature,
-                        **log_model_kwargs,
-                    )
+                    try:
+                        mlflow.pyfunc.log_model(
+                            python_model=kedro_pipeline_model,
+                            artifacts=artifacts,
+                            signature=model_signature,
+                            **log_model_kwargs,
+                        )
+                    except Exception:
+                        # TODO - Need to do the right thing here. log_model should be called only when
+                        # last pipeline node is executed. Probably we can add a tag for the node in the pipeline
+                        # definition in order to flag whether this piece of
+                        # code needs to be called or not.
+                        logging.warning("Cannot to save artifacts since they were not created yet")
+
             # Close the mlflow active run at the end of the pipeline to avoid interactions with further runs
             mlflow.end_run()
         else:
