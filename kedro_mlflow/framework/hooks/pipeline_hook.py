@@ -1,3 +1,4 @@
+import time
 import logging
 import os
 from filelock import FileLock
@@ -128,6 +129,8 @@ class MlflowPipelineHook:
                 else:
                     os.mkdir("/home/kedro/data/mlflow_run")  
 
+                print("here")
+                time.sleep(300)
                 with open("/home/kedro/data/mlflow_run/lock", "w"):
                     pass       
 
