@@ -236,7 +236,7 @@ class MlflowPipelineHook:
                         # last pipeline node is executed. Probably we can add a tag for the node in the pipeline
                         # definition in order to flag whether this piece of
                         # code needs to be called or not.
-                        logging.warning("Cannot to save artifacts since they were not created yet")
+                        logging.warning("Cannot save artifacts since they were not created yet")
 
             # Close the mlflow active run at the end of the pipeline to avoid interactions with further runs
             mlflow.end_run()
