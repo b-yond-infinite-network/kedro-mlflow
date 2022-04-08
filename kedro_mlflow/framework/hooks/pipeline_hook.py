@@ -119,19 +119,19 @@ class MlflowPipelineHook:
             kubeflow_run_id = os.environ.get("KUBEFLOW_RUN_ID")
             if kubeflow_run_id:
                 run_name = kubeflow_run_id 
-                # check if the mlflow run has already started
-                mlflow_run_has_started = os.path.isfile(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}")
-                if mlflow_run_has_started:
-                    # read the mlflow run id from the file
-                    with open(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}", "r") as f:
-                        mlflow_run_id = f.read()
-                else:
-                    try:
-                        os.mkdir("/home/kedro/data/mlflow_run")  
-                    except FileExistsError:
-                        pass
-    
+                try:
+                    os.mkdir("/home/kedro/data/mlflow_run")  
+                except FileExistsError:
+                    pass                
+
                 with FileLock("/home/kedro/data/mlflow_run/lock"):
+                    # check if the mlflow run has already started
+                    mlflow_run_has_started = os.path.isfile(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}")
+                    if mlflow_run_has_started:
+                        # read the mlflow run id from the file
+                        with open(f"/home/kedro/data/mlflow_run/{kubeflow_run_id}", "r") as f:
+                            mlflow_run_id = f.read()
+
                     active_run = mlflow.start_run(
                         run_id=mlflow_run_id,
                         experiment_id=mlflow_config.tracking.experiment._experiment.experiment_id,
