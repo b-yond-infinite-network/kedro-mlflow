@@ -1,7 +1,8 @@
 import logging
 from pathlib import Path
+import subprocess
 from tempfile import TemporaryDirectory
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Union
 
 import mlflow
 from kedro.framework.context import KedroContext
@@ -135,6 +136,7 @@ class MlflowPipelineHook:
                 nested=self.mlflow_config.tracking.run.nested,
             )
             # Set tags only for run parameters that have values.
+            mlflow.set_tag("git_sha", _git_sha(run_params["project_path"]))
             mlflow.set_tags({k: v for k, v in run_params.items() if v})
             # add manually git sha for consistency with the journal
             # TODO : this does not take into account not committed files, so it
@@ -288,3 +290,20 @@ def _generate_kedro_command(
 
     kedro_cmd = " ".join(cmd_list)
     return kedro_cmd
+
+
+def _git_sha(proj_dir: Union[str, Path] = None) -> Optional[str]:
+    """Git description of working tree.
+    Returns: Git description or None.
+    """
+    proj_dir = str(proj_dir or Path.cwd())
+    try:
+        res = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=proj_dir
+        )
+        return res.decode().strip()
+    # `subprocess.check_output()` raises `NotADirectoryError` on Windows
+    except (subprocess.CalledProcessError, FileNotFoundError, NotADirectoryError):
+        logging.getLogger(__name__).warning("Unable to git describe %s", proj_dir)
+    return None
+ 
