@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+MAJOR_RELEASE=${1:-0}
+MINOR_RELEASE=${2:-1}
+BRANCH=${3:-master}
+BUILD_NUMBER=${4:-$CF_BUILD_NUMBER}
+IMAGE_VERSION_START=${IMAGE_VERSION_START:-0}
+
+if [ $(echo $BRANCH | grep -w master) ]; then
+    echo $MAJOR_RELEASE.$MINOR_RELEASE.$(($BUILD_NUMBER+$IMAGE_VERSION_START))
+else
+    echo $MAJOR_RELEASE.$MINOR_RELEASE.$BRANCH
+fi
