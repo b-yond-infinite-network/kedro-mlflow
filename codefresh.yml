@@ -1,0 +1,103 @@
+version: "1.0"
+# hooks:
+#   on_fail:
+#     exec:
+#       type: msteams-notifier
+#       image: codefreshplugins/cfstep-msteams-notifier:latest
+#       arguments:
+#         CF_STATUS_MESSAGE: 'FAILURE'
+#         MSTEAMS_TITLE: '${{CF_PIPELINE_NAME}}'
+#         MSTEAMS_LINK_URL: '${{CF_BUILD_URL}}'
+#         MSTEAMS_LINK_URL_2: '${{CF_COMMIT_URL}}'
+#         MSTEAMS_TEXT: 'Codefresh Account: ${{CF_ACCOUNT}}'
+#         MSTEAMS_ACTIVITY_TEXT: 'GIT_REPO: *${{CF_REPO_NAME}}* -- COMMIT_AUTHOR: *${{CF_COMMIT_AUTHOR}}* -- COMMIT_MSG: *${{CF_COMMIT_MESSAGE}}* --  '
+#       when:
+#         condition:
+#           all:
+#             masterBranch: "'${{CF_BRANCH}}' == 'master'"
+stages:
+  - prepare
+  - test
+  - push
+  - tag
+
+steps:
+  # Unique build number (to allow previous versioning e.g. 0.0.$BUILD_NUMBER)
+  bump_version:
+    title: Bump build number
+    type: bump-build-number
+    stage: prepare
+    arguments:
+      ANNOTATION_NAME: "${{CF_BRANCH_TAG_NORMALIZED_LOWER_CASE}}_${{CF_REPO_NAME}}_build_number"
+    # when:
+    #   condition:
+    #     all:
+    #       masterBranch: "'${{CF_BRANCH}}' == 'master'"
+
+  main_clone:
+    title: Clone Repository
+    type: git-clone
+    stage: prepare
+    description: "Initialize"
+    repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+    git: github
+    revision: ${{CF_REVISION}}
+
+  # Here define more variables and versioning
+  env_variables:
+    title: Export Common Variables
+    image: "codefresh/kubectl"
+    stage: prepare
+    working_directory: ${{main_clone}}
+    commands:
+      - chmod +x ./scripts/*.sh
+      - cf_export APP_NAME="kedro-mlflow"
+      - cf_export TAG=$(./scripts/tagging.sh "0" "1" "$CF_BRANCH_TAG_NORMALIZED_LOWER_CASE" "$CF_BUILD_NUMBER")
+
+  prepare_build_code:
+    title: Prepare Build
+    image: python:3.9-buster
+    type: freestyle
+    stage: prepare
+    working_directory: ${{main_clone}}
+    commands:
+      - ./scripts/build.sh
+
+  # run_unit_tests:
+  #   title: Test
+  #   image: python:3.9-buster
+  #   stage: test
+  #   working_directory: ${{main_clone}}
+  #   commands:
+  #     - ./scripts/test.sh
+
+  push_library:
+    title: Push to fury
+    type: freestyle
+    image: alpine:3.13.2
+    stage: push
+    working_directory: ${{main_clone}}
+    commands:
+        - apk add --update curl
+        - ./scripts/release.sh
+    when:
+      condition:
+        all:
+          masterBranch: "'${{CF_BRANCH}}' == 'master'"
+
+  # git_tag:
+  #   title: Tag Commit & Push
+  #   type: freestyle
+  #   stage: tag
+  #   working_directory: "${{main_clone}}/scripts"
+  #   arguments:
+  #     image: '${{INFINITY_IAC}}'
+  #     commands:
+  #       - cf_export STEP_NAME='git_tag'
+  #       - chmod +x ./*.sh
+  #       - source vault-auth.sh
+  #       - ./git-tag.sh
+  #   when:
+  #     condition:
+  #       all:
+  #         masterBranch: "'${{CF_BRANCH}}' == 'master'"
