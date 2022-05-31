@@ -80,10 +80,10 @@ steps:
     commands:
         - apk add --update curl
         - ./scripts/release.sh
-    when:
-      condition:
-        all:
-          masterBranch: "'${{CF_BRANCH}}' == 'master'"
+    # when:
+    #   condition:
+    #     all:
+    #       masterBranch: "'${{CF_BRANCH}}' == 'master'"
 
   # git_tag:
   #   title: Tag Commit & Push

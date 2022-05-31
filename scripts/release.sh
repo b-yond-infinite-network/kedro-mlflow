@@ -5,7 +5,7 @@ set -e -x
 
 FURY_USERNAME=${1:-"b-yond-infinity-jenkins"}
 FURY_TOKEN=${2:-$FURY_TOKEN}
-PACKAGE_NAME=${3:-"ds_generic_classification"}
+PACKAGE_NAME=${3:-"kedro_mlflow"}
 TAG=${4:-$TAG}
 
 BASEDIR=$(dirname "$0")
